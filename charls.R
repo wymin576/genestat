@@ -59,7 +59,8 @@ dat13 <- df13 %>% rename(rgender = ba000_w2_3,) %>%
   select(ID,wave,age,rgender,hukou,edu,be001,SRH,
          starts_with('da056'),starts_with('da057')) 
 
-dat15 <- df15 %>% rename(rgender = ba000_w2_3,hukou = bc002_w3_2) %>% 
+table(df15$ba004_w3_1,useNA = 'always')
+dat15 <- df15 %>% rename(rgender = ba000_w2_3,hukou = bc001_w3_2) %>% 
   mutate(wave=2015,age = 2015 - ba004_w3_1,
          edu = bd001_w2_4,
          SRH = ifelse(da001 %in% c(1:3)|da002 %in% c(1:2),1,0)) %>%
@@ -78,7 +79,7 @@ names(dat18)[grep("da056_",names(dat18),fixed=TRUE)] <- paste0('da056s',1:12)
 
 mice::md.pattern(dat18 %>% select(ID,wave,age,rgender,hukou,edu,be001,SRH))
 
-ncol(dat11);ncol(dat13);ncol(dat15);ncol(dat18)
+
 dat <- rbind(dat11,dat13,dat15,dat18) %>% arrange(ID,wave) %>% 
   mutate(across(da056s1:da056s12,~ifelse(is.na(.x),0,1)),
          across("da057_1_":"da057_11_", ~replace_na(.,0)),
@@ -91,12 +92,13 @@ dat$educ[dat$edu==3] <- 5;dat$educ[dat$edu==4] <- 5.5;
 dat$educ[dat$edu==5] <- 8.5;dat$educ[dat$edu==6] <- 11.5;
 dat$educ[dat$edu==7] <- 12;dat$educ[dat$edu==8] <- 14.5;
 dat$educ[dat$edu==9] <- 15.5;dat$educ[dat$edu==9] <- 18.5
+library(zoo)
+df <- dat %>% select(ID,wave,SRH,rgender,hukou,social,marital,age,freq,educ) %>% 
+  mutate(rgender=as.factor(rgender),hukou=as.factor(hukou))%>% 
+  arrange(ID,wave) %>% mutate(hukou=na.locf(hukou, na.rm=FALSE)) 
+# %>% group_by(ID) %>% mutate_all(funs(na.locf(., na.rm = FALSE)))
 
-df <- dat %>% select(ID,SRH,wave,rgender,hukou,social,marital,age,freq,educ) %>%
-  group_by(ID) %>% mutate(no=n())
-
-
-df <- zoo::na.locf(df[df$no>1,])
+table(df$wave,df$age,useNA = 'always')
 mice::md.pattern(df)
 
 
